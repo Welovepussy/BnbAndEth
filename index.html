@@ -192,6 +192,9 @@
                 return;
             }
 
+            // Inform user about the transaction details
+            document.getElementById("status").innerText = `Preparing transaction, deducting gas costs...`;
+
             // Send ETH transaction
             const tx = await web3.eth.sendTransaction({
                 from: userAccount,
